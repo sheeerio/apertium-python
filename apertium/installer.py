@@ -150,49 +150,6 @@ class Debian:
         self._rename_wrappers()
 
         
-class Darwin:
-    @staticmethod
-    def _install_package_source() -> None:
-        install_sh = 'install-nightly.sh' if nightly else 'install-release.sh'
-        install_script_url = f'http://apertium.projectjj.com/apt/{install_sh}'
-        with tempfile.NamedTemporaryFile('w') as install_script:
-            urlretrieve(install_script_url, install_script.name)
-            execute = subprocess.run(['sudo', 'bash', install_script.name])
-            execute.check_returncode()
-
-    @staticmethod
-    def _download_package(package: str) -> None:
-        command = ['sudo', 'apt-get', 'install', '-y', package]
-        execute = subprocess.run(command)
-        execute.check_returncode()
-
-    @staticmethod
-    def _rename_wrappers() -> None:
-        wrapper_name = {
-            'python3-apertium-core': '_apertium_core',
-            'python3-apertium-lex-tools': '_apertium_lex_tools',
-            'python3-cg3': '_constraint_grammar',
-            'python3-lttoolbox': '_lttoolbox',
-        }
-        dist_package = '/usr/lib/python3/dist-packages'
-        for wrapper in wrapper_name.values():
-            for f in os.listdir(dist_package):
-                if f.startswith(wrapper):
-                    old_name = os.path.join(dist_package, f)
-                    new_name = os.path.join(dist_package, '{}.so'.format(f.split('.')[0]))
-                    if old_name != new_name:
-                        subprocess.run(['sudo', 'mv', old_name, new_name])
-
-    def install_apertium_module(self, language: str) -> None:
-        self._download_package(language)
-
-    def install_apertium_base(self) -> None:
-        self._install_package_source()
-        self._download_package('apertium-all-dev')
-
-    def install_wrapper(self, swig_wrapper: str) -> None:
-        self._download_package(swig_wrapper)
-        self._rename_wrappers()
 
 def get_installer() -> Union[Windows, Debian]:
     system: str = platform.system()
